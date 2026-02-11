@@ -19,6 +19,8 @@ export default function App() {
   const [playerIndex, setPlayerIndex] = useState(0);
   const [frameIndex, setFrameIndex] = useState(0);
   const [resetToken, setResetToken] = useState(1);
+  const [keepStandingPins, setKeepStandingPins] = useState(false);
+  const [rolling, setRolling] = useState(false);
 
   const curFrames = framesByPlayer[playerIndex] ?? [];
   const curFrame = curFrames[frameIndex] ?? { rolls: [] as number[] };
@@ -34,7 +36,12 @@ export default function App() {
   const maxPins = maxPinsThisRoll(frameIndex, curFrame);
 
   function onLaneEvent(e: LaneEvent) {
+    if (e.kind === "throw") {
+      setRolling(true);
+      return;
+    }
     if (e.kind !== "roll_end") return;
+    setRolling(false);
 
     const knocked = Math.max(0, Math.min(maxPins, e.knocked));
 
@@ -52,6 +59,7 @@ export default function App() {
 
       if (!done) {
         // second roll in same frame -> keep standing pins
+        setKeepStandingPins(true);
         setResetToken((x) => x + 1);
         return;
       }
@@ -66,6 +74,7 @@ export default function App() {
       }
 
       // full reset pins for next turn/frame
+      setKeepStandingPins(false);
       setResetToken((x) => x + 1);
     })();
 
@@ -80,6 +89,8 @@ export default function App() {
       setFramesByPlayer(() => makeInitialFrames(next.length));
       setPlayerIndex(0);
       setFrameIndex(0);
+      setKeepStandingPins(false);
+      setRolling(false);
       setResetToken((x) => x + 1);
       return next;
     });
@@ -90,6 +101,8 @@ export default function App() {
     setFramesByPlayer(makeInitialFrames(players.length));
     setPlayerIndex(0);
     setFrameIndex(0);
+    setKeepStandingPins(false);
+    setRolling(false);
     setResetToken((x) => x + 1);
   }
 
@@ -140,7 +153,12 @@ export default function App() {
         </section>
 
         <section className="laneWrap">
-          <LaneCanvas resetToken={resetToken} onEvent={onLaneEvent} />
+          <LaneCanvas
+            resetToken={resetToken}
+            keepStandingPins={keepStandingPins}
+            disabled={rolling}
+            onEvent={onLaneEvent}
+          />
           <div className="hint">Tip: swipe up. Curve left/right by swiping diagonally.</div>
         </section>
       </main>

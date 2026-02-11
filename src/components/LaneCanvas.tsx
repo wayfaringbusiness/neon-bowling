@@ -10,6 +10,8 @@ type Props = {
   onEvent?: (e: LaneEvent) => void;
   // When this number changes, reset the lane/pins.
   resetToken: number;
+  // If true, keep standing pins on reset (for 2nd roll of a frame).
+  keepStandingPins?: boolean;
 };
 
 // Simulation dimensions (world units ~= px)
@@ -107,7 +109,9 @@ export function LaneCanvas(props: Props) {
       return;
     }
 
-    const pinStartY = laneBounds.top + 90;
+    // Real 10-pin rack: headpin closest to the bowler.
+    // In our world, the bowler is near the bottom of the lane (larger y).
+    const headPinY = laneBounds.top + 90 + 3 * 32;
     const pinCenterX = (laneBounds.left + laneBounds.right) / 2;
     const rowGapY = 32;
     const colGapX = 20;
@@ -116,7 +120,7 @@ export function LaneCanvas(props: Props) {
     let idx = 0;
     for (let r = 0; r < rows.length; r++) {
       const count = rows[r];
-      const y = pinStartY + r * rowGapY;
+      const y = headPinY - r * rowGapY;
       const x0 = pinCenterX - ((count - 1) * colGapX) / 2;
       for (let c = 0; c < count; c++) {
         const x = x0 + c * colGapX;
@@ -162,6 +166,8 @@ export function LaneCanvas(props: Props) {
     return { knocked, remaining: standing.length };
   }
 
+  const rollingRef = useRef(false);
+
   function throwBall(dx: number, dy: number, dtMs: number) {
     const engine = engineRef.current;
     const ball = ballRef.current;
@@ -170,6 +176,8 @@ export function LaneCanvas(props: Props) {
     // Only allow throw if ball is near the start zone and mostly stationary.
     const v = ball.velocity;
     const speedNow = Math.hypot(v.x, v.y);
+    const inStartZone = ball.position.y > laneBounds.bottom - 140;
+    if (!inStartZone) return;
     if (speedNow > 0.4) return;
 
     // Interpret swipe: upward swipe (dy negative) gives forward speed.
@@ -188,6 +196,7 @@ export function LaneCanvas(props: Props) {
 
     Matter.Body.setAngularVelocity(ball, clamp(vx * 0.12, -0.2, 0.2));
 
+    rollingRef.current = true;
     props.onEvent?.({ kind: "throw", speed: forward, curve });
   }
 
@@ -297,18 +306,16 @@ export function LaneCanvas(props: Props) {
 
     Matter.Engine.update(engine, dt);
 
-    // End-of-roll detection: ball passes pins or slows/stops.
+    // End-of-roll detection: once thrown, end when ball reaches pin deck or slows.
     const ball = ballRef.current;
-    if (ball) {
-      const nearTop = ball.position.y < laneBounds.top + 120;
+    if (ball && rollingRef.current) {
+      const nearPins = ball.position.y < laneBounds.top + 170;
       const slow = Math.hypot(ball.velocity.x, ball.velocity.y) < 0.35;
-      if (nearTop || slow) {
-        // Evaluate pins once ball slows, then reset ball.
+      if (nearPins || slow) {
         const { knocked, remaining } = removeDownPins();
-        if (knocked > 0 || nearTop) {
-          props.onEvent?.({ kind: "roll_end", knocked, remaining });
-          resetBallPosition();
-        }
+        rollingRef.current = false;
+        props.onEvent?.({ kind: "roll_end", knocked, remaining });
+        resetBallPosition();
       }
     }
 
@@ -346,9 +353,10 @@ export function LaneCanvas(props: Props) {
   }, []);
 
   useEffect(() => {
-    // new frame => full reset
-    resetWorld(false);
+    // reset => either full rack or keep standing pins (second roll)
+    resetWorld(!!props.keepStandingPins);
     setGestureHint(null);
+    rollingRef.current = false;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.resetToken]);
 
