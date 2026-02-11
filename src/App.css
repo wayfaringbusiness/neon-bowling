@@ -9,6 +9,12 @@ body,
 #root {
   height: 100%;
   margin: 0;
+  overflow: hidden; /* no page scroll while playing */
+  overscroll-behavior: none;
+}
+
+body {
+  touch-action: none; /* prevent scroll/pinch on iOS while interacting */
 }
 
 .appRoot {
@@ -66,6 +72,7 @@ body,
   padding: 0 16px 20px;
   display: grid;
   gap: 14px;
+  height: calc(100vh - 120px);
 }
 
 .scoreCard {
@@ -167,6 +174,11 @@ body,
 .laneWrap {
   display: grid;
   gap: 10px;
+  min-height: 0;
+}
+
+.laneWrap canvas {
+  max-height: calc(100vh - 260px);
 }
 
 .hint {
