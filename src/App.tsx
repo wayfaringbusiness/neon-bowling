@@ -121,37 +121,6 @@ export default function App() {
       </header>
 
       <main className="main">
-        <section className="scoreCard">
-          <div className="turnRow">
-            <div>
-              <div className="turnLabel">Up next</div>
-              <div className="turnName">{players[playerIndex]?.name}</div>
-            </div>
-            <div className="turnMeta">
-              <div className="pill">Frame {frameIndex + 1}/10</div>
-              <div className="pill">Roll {curFrame.rolls.length + 1}</div>
-            </div>
-          </div>
-
-          <div className="scoreGrid">
-            {scores.map((s) => (
-              <div key={s.player.id} className={"playerRow" + (s.player.id === players[playerIndex]?.id ? " active" : "")}
-              >
-                <div className="playerName">{s.player.name}</div>
-                <div className="playerTotal">{s.total}</div>
-                <div className="frameMini">
-                  {Array.from({ length: 10 }).map((_, i) => (
-                    <div key={i} className="frameCell">
-                      <div className="frameNum">{i + 1}</div>
-                      <div className="frameVal">{s.perFrame[i] ?? ""}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
         <section className="laneWrap">
           <LaneCanvas
             resetToken={resetToken}
@@ -159,6 +128,32 @@ export default function App() {
             disabled={rolling}
             onEvent={onLaneEvent}
           />
+
+          <div className="scoreOverlay" aria-label="Scoreboard">
+            <div className="turnRow">
+              <div>
+                <div className="turnLabel">Up next</div>
+                <div className="turnName">{players[playerIndex]?.name}</div>
+              </div>
+              <div className="turnMeta">
+                <div className="pill">Frame {frameIndex + 1}/10</div>
+                <div className="pill">Roll {curFrame.rolls.length + 1}</div>
+              </div>
+            </div>
+
+            <div className="scoreGrid">
+              {scores.map((s) => (
+                <div
+                  key={s.player.id}
+                  className={"playerRow" + (s.player.id === players[playerIndex]?.id ? " active" : "")}
+                >
+                  <div className="playerName">{s.player.name}</div>
+                  <div className="playerTotal">{s.total}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="hint">Tip: swipe up. Curve left/right by swiping diagonally.</div>
         </section>
       </main>

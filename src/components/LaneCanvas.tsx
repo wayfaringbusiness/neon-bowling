@@ -321,7 +321,7 @@ export function LaneCanvas(props: Props) {
 
     // Fit to container
     const wrap = wrapRef.current;
-    const scale = wrap ? Math.min(wrap.clientWidth / W, 1.25) : 1;
+    const scale = wrap ? Math.min(wrap.clientWidth / W, wrap.clientHeight / H, 1.25) : 1;
     const wpx = Math.floor(W * scale);
     const hpx = Math.floor(H * scale);
     if (canvas.width !== wpx || canvas.height !== hpx) {
