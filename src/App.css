@@ -92,6 +92,20 @@ body {
   padding: 12px;
 }
 
+.overlayClose {
+  position: absolute;
+  right: 10px;
+  top: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.35);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 18px;
+  line-height: 30px;
+}
+
 .turnRow {
   display: flex;
   justify-content: space-between;

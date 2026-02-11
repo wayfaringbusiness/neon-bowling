@@ -21,6 +21,8 @@ export default function App() {
   const [resetToken, setResetToken] = useState(1);
   const [keepStandingPins, setKeepStandingPins] = useState(false);
   const [rolling, setRolling] = useState(false);
+  const [showScoreOverlay, setShowScoreOverlay] = useState(true);
+  const overlayTimerRef = useState<{ id: number | null }>(() => ({ id: null }))[0];
 
   const curFrames = framesByPlayer[playerIndex] ?? [];
   const curFrame = curFrames[frameIndex] ?? { rolls: [] as number[] };
@@ -38,10 +40,16 @@ export default function App() {
   function onLaneEvent(e: LaneEvent) {
     if (e.kind === "throw") {
       setRolling(true);
+      setShowScoreOverlay(false);
+      if (overlayTimerRef.id) window.clearTimeout(overlayTimerRef.id);
+      overlayTimerRef.id = null;
       return;
     }
     if (e.kind !== "roll_end") return;
     setRolling(false);
+    setShowScoreOverlay(true);
+    if (overlayTimerRef.id) window.clearTimeout(overlayTimerRef.id);
+    overlayTimerRef.id = window.setTimeout(() => setShowScoreOverlay(false), 1400);
 
     const knocked = Math.max(0, Math.min(maxPins, e.knocked));
 
@@ -91,6 +99,7 @@ export default function App() {
       setFrameIndex(0);
       setKeepStandingPins(false);
       setRolling(false);
+      setShowScoreOverlay(true);
       setResetToken((x) => x + 1);
       return next;
     });
@@ -103,6 +112,7 @@ export default function App() {
     setFrameIndex(0);
     setKeepStandingPins(false);
     setRolling(false);
+    setShowScoreOverlay(true);
     setResetToken((x) => x + 1);
   }
 
@@ -115,6 +125,7 @@ export default function App() {
         </div>
 
         <div className="hudRight">
+          <button className="hudBtn ghost" onClick={() => setShowScoreOverlay((v) => !v)}>Score</button>
           <button className="hudBtn" onClick={addPlayer}>+ Player</button>
           <button className="hudBtn ghost" onClick={resetGame}>Reset</button>
         </div>
@@ -129,7 +140,9 @@ export default function App() {
             onEvent={onLaneEvent}
           />
 
-          <div className="scoreOverlay" aria-label="Scoreboard">
+          {showScoreOverlay ? (
+          <div className="scoreOverlay" aria-label="Scoreboard" onClick={() => setShowScoreOverlay(false)}>
+            <button className="overlayClose" onClick={() => setShowScoreOverlay(false)} aria-label="Close scoreboard">×</button>
             <div className="turnRow">
               <div>
                 <div className="turnLabel">Up next</div>
@@ -153,6 +166,7 @@ export default function App() {
               ))}
             </div>
           </div>
+          ) : null}
 
           <div className="hint">Tip: swipe up. Curve left/right by swiping diagonally.</div>
         </section>
